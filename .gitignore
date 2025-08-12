@@ -39,3 +39,36 @@
 
 # debug information files
 *.dwo
+
+
+gitignore# CMake build files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Build directories
+build/
+out/
+
+# Compiled executables
+scheduler
+*.exe
+*.out
+
+# Object files (if any get generated)
+*.o
+*.obj
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
