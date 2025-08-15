@@ -1,7 +1,7 @@
 #include <chrono>
 class Task {
 public:
-    Task(int p):priority(p), timestamp(std::chrono::steady_clock::now());
+    Task(int p):priority(p), timestamp(std::chrono::steady_clock::now()){};
     
     virtual ~Task() = default;
     
