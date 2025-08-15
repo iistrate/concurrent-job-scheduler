@@ -5,10 +5,10 @@ public:
     
     virtual ~Task() = default;
     
-    int getPriority() const {return priority;}
-    void setPriority(int p) {priority = p;}    
+    int Task::getPriority() const;
+    void setPriority(int p);
 
-    std::chrono::steady_clock::time_point getTimestamp() const {return timestamp;}
+    std::chrono::steady_clock::time_point getTimestamp() const;
 protected:
     int priority;
     std::chrono::steady_clock::time_point timestamp;
