@@ -1,14 +1,13 @@
 #include <chrono>
 class Task {
 public:
-    Task(int p):priority(p), timestamp(std::chrono::steady_clock::now()){};
+    explicit Task(int p):priority(p), timestamp(std::chrono::steady_clock::now()){};
     
     virtual ~Task() = default;
     
-    int Task::getPriority() const;
-    void setPriority(int p);
-
-    std::chrono::steady_clock::time_point getTimestamp() const;
+    int getPriority() const noexcept { return priority; };
+    void setPriority(int p) noexcept { priority = p; };
+    std::chrono::steady_clock::time_point getTimestamp() const noexcept { return timestamp; }
 protected:
     int priority;
     std::chrono::steady_clock::time_point timestamp;
