@@ -19,9 +19,9 @@ using Task_p = std::unique_ptr<Task>;
 class Scheduler {
 
     std::vector<std::thread> threadpool;
-    std::unique_lock<std::mutex> mtx;
+    std::mutex mtx;
     std::condition_variable cv;
-    bool running = true;
+    bool running;
     struct cmp {
         bool operator()(const Task_p& a, const Task_p& b);
     };

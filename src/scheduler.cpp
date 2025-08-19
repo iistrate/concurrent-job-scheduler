@@ -8,6 +8,9 @@ bool Scheduler::cmp::operator()(const Task_p& a, const Task_p& b) {
 }
 
 void Scheduler::start(const int N=8) {
+    mtx.lock();
+    running = true;
+    mtx.unlock();
     threadpool.reserve(N);
     for(int i = 0; i < N; ++i) {
         threadpool.emplace_back(&Scheduler::run, this);
@@ -15,8 +18,9 @@ void Scheduler::start(const int N=8) {
 }
 
 void Scheduler::stop() {
-    std::lock_guard<std::unique_lock<std::mutex>> lock(mtx);
+    mtx.lock();
     running = false;
+    mtx.unlock();
     cv.notify_all();
 }
 
@@ -28,8 +32,10 @@ void Scheduler::join() {
 }
 
 void Scheduler::cancel(int tid) {
-    if(cancelled.count(tid)) return;
+    mtx.lock();
     cancelled.insert(tid);
+    cv.notify_one();
+    mtx.unlock();
 }
 
 status_t Scheduler::add(Task_p t) {
@@ -42,20 +48,21 @@ status_t Scheduler::add(Task_p t) {
 }
 
 void Scheduler::run() {
+    std::unique_lock<std::mutex> lk(mtx, std::defer_lock);
     while(running) {
-        mtx.lock();
+        lk.lock();
         while (pq.empty() && running) {
-             cv.wait(mtx);
+             cv.wait(lk);
         }
         if (!running) {
-            mtx.unlock();
+            lk.unlock();
             return;
         }
         auto t = std::move(const_cast<Task_p&>(pq.top()));
         pq.pop();
+        lk.unlock();
         if(!cancelled.count(t->getId())) {
             t->execute();
         }
-        mtx.unlock();
     }
 }

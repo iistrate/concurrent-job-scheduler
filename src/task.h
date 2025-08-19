@@ -4,7 +4,7 @@
 #include <chrono>
 class Task {
 public:
-    explicit Task(int p):priority(p), timestamp(std::chrono::steady_clock::now()){};
+    explicit Task(int p):priority(p), timestamp(std::chrono::steady_clock::now()), tid(generateNextID()){};
     
     virtual ~Task() = default;
     
@@ -13,6 +13,10 @@ public:
     void setPriority(int p) noexcept { priority = p; }
     std::chrono::steady_clock::time_point getTimestamp() const noexcept { return timestamp; }
     virtual void execute() = 0;
+    int generateNextID() {
+        std::atomic<int> counter(0);
+        return counter++;
+    }
 protected:
     int priority;
     int tid;
