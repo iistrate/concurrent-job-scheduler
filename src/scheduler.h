@@ -21,7 +21,7 @@ class Scheduler {
     std::vector<std::thread> threadpool;
     std::mutex mtx;
     std::condition_variable cv;
-    bool running;
+    bool running=false;
     struct cmp {
         bool operator()(const Task_p& a, const Task_p& b);
     };
@@ -29,7 +29,6 @@ class Scheduler {
     std::priority_queue<Task_p, std::vector<Task_p>, cmp> pq;
     std::unordered_set<int> cancelled;
 
-    void process();
     void cancel(int tid);
     void start(const int N);
     void stop();
