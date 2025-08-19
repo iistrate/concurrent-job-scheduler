@@ -49,7 +49,7 @@ status_t Scheduler::add(Task_p t) {
 
 void Scheduler::run() {
     std::unique_lock<std::mutex> lk(mtx, std::defer_lock);
-    while(running) {
+    while(1) {
         lk.lock();
         while (pq.empty() && running) {
              cv.wait(lk);
@@ -63,6 +63,9 @@ void Scheduler::run() {
         lk.unlock();
         if(!cancelled.count(t->getId())) {
             t->execute();
+        }
+        else {
+            cancelled.erase(t->getId());
         }
     }
 }
