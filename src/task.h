@@ -5,11 +5,13 @@ public:
     
     virtual ~Task() = default;
     
-    int getPriority() const noexcept { return priority; };
-    void setPriority(int p) noexcept { priority = p; };
+    int getPriority() const noexcept { return priority; }
+    int getId() const noexcept { return tid; }
+    void setPriority(int p) noexcept { priority = p; }
     std::chrono::steady_clock::time_point getTimestamp() const noexcept { return timestamp; }
     virtual void execute() = 0;
 protected:
     int priority;
+    int tid;
     std::chrono::steady_clock::time_point timestamp;
 };

@@ -27,12 +27,9 @@ void Scheduler::join() {
     threadpool.clear();
 }
 
-void Scheduler::process() {
-
-}
-
 void Scheduler::cancel(int tid) {
-
+    if(cancelled.count(tid)) return;
+    cancelled.insert(tid);
 }
 
 status_t Scheduler::add(Task_p t) {
@@ -51,10 +48,12 @@ void Scheduler::run() {
         if (!running) {
             mtx.unlock();
             return;
-        }        
+        }
         auto t = std::move(const_cast<Task_p&>(pq.top()));
         pq.pop();
-        mtx.unlock();        
-        t->execute();        
+        mtx.unlock();
+        if(!cancelled.count(t->getId())) {
+            t->execute();
+        }
     }
 }

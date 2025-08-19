@@ -5,6 +5,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <unordered_set>
 
 #include "task.h"
 
@@ -26,6 +27,8 @@ class Scheduler {
     };
 
     std::priority_queue<Task_p, std::vector<Task_p>, cmp> pq;
+    std::unordered_set<int> cancelled;
+
     void process();
     void cancel(int tid);
     void start(const int N);
