@@ -37,16 +37,21 @@ void Scheduler::cancel(int tid) {
 
 status_t Scheduler::add(Task_p t) {
     if(t == nullptr) return ERROR;
+    mtx.lock();
     pq.push(t);
+    cv.notify_one();
+    mtx.unlock();
     return SUCCESS;
 }
 
 void Scheduler::run() {
     while(running) {
         mtx.lock();
-        while(pq.empty()) {
-            cv.wait(mtx, [&]{ return running; });
-        }
+        cv.wait(mtx, [&]{ return !pq.empty() || !running; });
+        if (!running) {
+            mtx.unlock();
+            return;
+        }        
         auto t = std::move(const_cast<Task_p&>(pq.top()));
         pq.pop();
         mtx.unlock();        

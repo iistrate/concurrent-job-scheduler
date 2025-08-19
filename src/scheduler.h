@@ -18,7 +18,7 @@ using Task_p = std::unique_ptr<Task>;
 class Scheduler {
 
     std::vector<std::thread> threadpool;
-    std::mutex mtx;
+    std::unique_lock<std::mutex> mtx;
     std::condition_variable cv;
     bool running = true;
     struct cmp {
