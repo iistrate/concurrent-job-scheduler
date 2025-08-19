@@ -1,3 +1,6 @@
+#ifndef TASK_H
+#define TASK_H
+
 #include <chrono>
 class Task {
 public:
@@ -15,3 +18,5 @@ protected:
     int tid;
     std::chrono::steady_clock::time_point timestamp;
 };
+
+#endif //TASK_H

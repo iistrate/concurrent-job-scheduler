@@ -7,7 +7,7 @@ bool Scheduler::cmp::operator()(const Task_p& a, const Task_p& b) {
     return a->getPriority() < b->getPriority();
 }
 
-void Scheduler::start(const int N) {
+void Scheduler::start(const int N=8) {
     threadpool.reserve(N);
     for(int i = 0; i < N; ++i) {
         threadpool.emplace_back(&Scheduler::run, this);
@@ -15,7 +15,7 @@ void Scheduler::start(const int N) {
 }
 
 void Scheduler::stop() {
-    std::lock_guard<std::mutex> lk(mtx);
+    std::lock_guard<std::unique_lock<std::mutex>> lock(mtx);
     running = false;
     cv.notify_all();
 }
@@ -44,16 +44,18 @@ status_t Scheduler::add(Task_p t) {
 void Scheduler::run() {
     while(running) {
         mtx.lock();
-        cv.wait(mtx, [&]{ return !pq.empty() || !running; });
+        while (pq.empty() && running) {
+             cv.wait(mtx);
+        }
         if (!running) {
             mtx.unlock();
             return;
         }
         auto t = std::move(const_cast<Task_p&>(pq.top()));
         pq.pop();
-        mtx.unlock();
         if(!cancelled.count(t->getId())) {
             t->execute();
         }
+        mtx.unlock();
     }
 }
