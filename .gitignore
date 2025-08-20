@@ -54,6 +54,7 @@ out/
 
 # Compiled executables
 scheduler
+scheduler_tests
 *.exe
 *.out
 
