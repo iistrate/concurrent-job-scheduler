@@ -23,10 +23,10 @@ class Scheduler {
     std::condition_variable cv;
     bool running=false;
     struct cmp {
-        bool operator()(const Task_p& a, const Task_p& b);
+        bool operator()(const Task* a, const Task* b);
     };
 
-    std::priority_queue<Task_p, std::vector<Task_p>, cmp> pq;
+    std::priority_queue<Task*, std::vector<Task*>, cmp> pq;
     std::unordered_set<int> cancelled;
 
 public:

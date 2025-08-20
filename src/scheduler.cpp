@@ -1,6 +1,6 @@
 #include "scheduler.h"
 
-bool Scheduler::cmp::operator()(const Task_p& a, const Task_p& b) {
+bool Scheduler::cmp::operator()(const Task* a, const Task* b) {
     if (a->getPriority() == b->getPriority()) {
         return a->getTimestamp() > b->getTimestamp();
     }
@@ -8,9 +8,10 @@ bool Scheduler::cmp::operator()(const Task_p& a, const Task_p& b) {
 }
 
 void Scheduler::start(const int N=8) {
-    mtx.lock();
-    running = true;
-    mtx.unlock();
+    {
+        std::lock_guard<std::mutex> lk(mtx);
+        running = true;
+    }
     threadpool.reserve(N);
     for(int i = 0; i < N; ++i) {
         threadpool.emplace_back(&Scheduler::run, this);
@@ -18,9 +19,10 @@ void Scheduler::start(const int N=8) {
 }
 
 void Scheduler::stop() {
-    mtx.lock();
-    running = false;
-    mtx.unlock();
+    {
+        std::lock_guard<std::mutex> lk(mtx);
+        running = false;
+    }
     cv.notify_all();
 }
 
@@ -32,40 +34,40 @@ void Scheduler::join() {
 }
 
 void Scheduler::cancel(int tid) {
-    mtx.lock();
-    cancelled.insert(tid);
-    cv.notify_one();
-    mtx.unlock();
+    {
+        std::lock_guard<std::mutex> lk(mtx);
+        cancelled.insert(tid);
+        cv.notify_one();
+    }
 }
 
 status_t Scheduler::add(Task_p t) {
     if(t == nullptr) return ERROR;
-    mtx.lock();
-    pq.push(t);
+    {
+        std::lock_guard<std::mutex> lk(mtx);
+        pq.push(t.release());
+    }
     cv.notify_one();
-    mtx.unlock();
     return SUCCESS;
 }
 
 void Scheduler::run() {
-    std::unique_lock<std::mutex> lk(mtx, std::defer_lock);
-    while(1) {
-        lk.lock();
+    std::unique_lock<std::mutex> lk(mtx);
+    while(running) {
         while (pq.empty() && running) {
              cv.wait(lk);
         }
         if (!running) {
-            lk.unlock();
             return;
         }
-        auto t = std::move(const_cast<Task_p&>(pq.top()));
+        Task_p t(pq.top());
         pq.pop();
-        lk.unlock();
-        if(!cancelled.count(t->getId())) {
-            t->execute();
-        }
-        else {
+        if(cancelled.count(t->getId())) {
             cancelled.erase(t->getId());
+            continue;
         }
+        lk.unlock();
+        t->execute();
+        lk.lock();
     }
 }
