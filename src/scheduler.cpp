@@ -1,5 +1,7 @@
 #include "scheduler.h"
 
+std::atomic<int> Task::counter{0};
+
 bool Scheduler::cmp::operator()(const Task* a, const Task* b) {
     if (a->getPriority() == b->getPriority()) {
         return a->getTimestamp() > b->getTimestamp();

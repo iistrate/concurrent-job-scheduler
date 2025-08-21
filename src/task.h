@@ -2,8 +2,9 @@
 #define TASK_H
 
 #include <chrono>
+#include <atomic>
 class Task {
-    std::atomic<int> counter = 0;
+    static std::atomic<int> counter;
 public:
     explicit Task(int p):priority(p), timestamp(std::chrono::steady_clock::now()), tid(generateNextID()){};
     
@@ -14,7 +15,7 @@ public:
     void setPriority(int p) noexcept { priority = p; }
     std::chrono::steady_clock::time_point getTimestamp() const noexcept { return timestamp; }
     virtual void execute() = 0;
-    int generateNextID() {
+    static int generateNextID() {
         return ++counter;
     }
 protected:
