@@ -98,24 +98,22 @@ TEST_F(SchedulerTest, IsItFasterWithMoreThreads) {
     scheduler_->join(); // IMPORTANT: clean shutdown before restart
 
     // --- Single-threaded ---
+    Scheduler scheduler_st;
     std::atomic<int> completed_single{0};
     std::promise<void> prom_single;
     auto fut_single = prom_single.get_future();
 
-    scheduler_->start(1);
+    scheduler_st.start(1);
 
     auto t0_single = std::chrono::steady_clock::now();
     for (int i = 0; i < ntask; ++i) {
         auto task = std::make_unique<TestTask>(i, make_task(completed_single, prom_single));
-        ASSERT_EQ(scheduler_->add(std::move(task)), status_t::SUCCESS);
+        ASSERT_EQ(scheduler_st.add(std::move(task)), status_t::SUCCESS);
     }
     // 100 * 100ms = 10s theoretical; give margin:
     ASSERT_EQ(fut_single.wait_for(std::chrono::seconds(timeout)), std::future_status::ready);
     auto t1_single = std::chrono::steady_clock::now();
     auto dur_single = std::chrono::duration_cast<std::chrono::milliseconds>(t1_single - t0_single);
-
-    scheduler_->stop();
-    scheduler_->join();
 
     std::cout << "Multithread (" << nthreads << ")  : " << dur_multi.count()  << " ms\n";
     std::cout << "Singlethread (1)       : " << dur_single.count() << " ms\n";
@@ -123,3 +121,14 @@ TEST_F(SchedulerTest, IsItFasterWithMoreThreads) {
 
     EXPECT_LT(dur_multi.count(), dur_single.count());
 }
+
+
+/*
+Priority Test: Add a low priority task, then a high priority task, and assert that the high-priority task is executed first.
+
+FIFO Test: Add two tasks with the same priority and verify they are executed in the order they were added.
+
+Cancellation Test: Add a task, immediately cancel it, and verify that it was never executed.
+
+Stress Test: Hammer the scheduler with thousands of tasks from multiple producer threads to check for deadlocks or race conditions.
+*/

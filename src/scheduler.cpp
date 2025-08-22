@@ -2,7 +2,7 @@
 
 std::atomic<int> Task::counter{0};
 
-bool Scheduler::cmp::operator()(const Task* a, const Task* b) {
+bool Scheduler::cmp::operator()(const Task_p& a, const Task_p& b) {
     if (a->getPriority() == b->getPriority()) {
         return a->getTimestamp() > b->getTimestamp();
     }
@@ -21,6 +21,9 @@ void Scheduler::start(const int N=8) {
 }
 
 void Scheduler::stop() {
+    if(stopped.exchange(true)) {
+        return;
+    }    
     {
         std::lock_guard<std::mutex> lk(mtx);
         running = false;
@@ -29,6 +32,10 @@ void Scheduler::stop() {
 }
 
 void Scheduler::join() {
+    stop();
+    if(joined.exchange(true)) {
+        return;
+    }
     for(auto &t: threadpool) {
         t.join();        
     }
@@ -47,14 +54,15 @@ status_t Scheduler::add(Task_p t) {
     if(t == nullptr) return ERROR;
     {
         std::lock_guard<std::mutex> lk(mtx);
-        pq.push(t.release());
+        pq.push(std::move(t));
+        cv.notify_one();
     }
-    cv.notify_one();
     return SUCCESS;
 }
 
 void Scheduler::run() {
     std::unique_lock<std::mutex> lk(mtx);
+    Task_p t;
     while(running) {
         while (pq.empty() && running) {
              cv.wait(lk);
@@ -62,7 +70,7 @@ void Scheduler::run() {
         if (!running) {
             return;
         }
-        Task_p t(pq.top());
+        t = std::move(const_cast<Task_p&>(pq.top()));
         pq.pop();
         if(cancelled.count(t->getId())) {
             cancelled.erase(t->getId());
@@ -72,4 +80,9 @@ void Scheduler::run() {
         t->execute();
         lk.lock();
     }
+}
+
+Scheduler::~Scheduler() {
+    stop();
+    join();
 }

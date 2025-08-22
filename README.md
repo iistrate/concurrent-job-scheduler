@@ -216,6 +216,12 @@ scheduler.cancel(taskId);
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Roadmap
+
+- [ ] Expand unit test suite to cover cancellation and priority edge cases.
+- [ ] Investigate performance with a larger number of worker threads.
+- [ ] Add support for scheduled (delayed) task execution.
+
 ## Status
 
 ✅ **Version 1.0.0** – Stable release with full test coverage and initial performance benchmarks.
