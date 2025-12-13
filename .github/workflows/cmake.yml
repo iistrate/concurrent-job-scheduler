@@ -19,10 +19,11 @@ jobs:
         sudo apt-get install -y libgtest-dev libgmock-dev cmake
 
     - name: Configure CMake
+      # Adds coverage flags so Codecov can read the results
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake .. -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_EXE_LINKER_FLAGS="--coverage"
 
     - name: Build Project
       run: |
@@ -38,3 +39,8 @@ jobs:
       run: |
         cd build
         ./scheduler_tests
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
