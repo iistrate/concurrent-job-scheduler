@@ -123,12 +123,117 @@ TEST_F(SchedulerTest, IsItFasterWithMoreThreads) {
 }
 
 
-/*
-Priority Test: Add a low priority task, then a high priority task, and assert that the high-priority task is executed first.
+TEST_F(SchedulerTest, PriorityExecutionOrder) {
+    // 1. Start with 1 thread so we can deterministicly control execution order
+    scheduler_->start(1);
 
-FIFO Test: Add two tasks with the same priority and verify they are executed in the order they were added.
+    std::vector<int> execution_order;
+    std::mutex vector_mutex;
+    std::promise<void> gatekeeper_start, gatekeeper_end;
 
-Cancellation Test: Add a task, immediately cancel it, and verify that it was never executed.
+    // 2. Add a "Gatekeeper" task to block the single thread
+    auto gatekeeper = std::make_unique<TestTask>(50, [&]() {
+        gatekeeper_start.set_value(); // Signal that we are running
+        gatekeeper_end.get_future().wait(); // Block until allowed to finish
+    });
+    scheduler_->add(std::move(gatekeeper));
 
-Stress Test: Hammer the scheduler with thousands of tasks from multiple producer threads to check for deadlocks or race conditions.
-*/
+    // Wait for gatekeeper to occupy the thread
+    gatekeeper_start.get_future().wait();
+
+    // 3. Now that the thread is busy, queue up tasks
+    // Add Low Priority first (should run LAST)
+    auto low_prio = std::make_unique<TestTask>(10, [&]() {
+        std::lock_guard<std::mutex> lock(vector_mutex);
+        execution_order.push_back(10);
+    });
+    
+    // Add High Priority second (should run FIRST)
+    auto high_prio = std::make_unique<TestTask>(90, [&]() {
+        std::lock_guard<std::mutex> lock(vector_mutex);
+        execution_order.push_back(90);
+    });
+
+    scheduler_->add(std::move(low_prio));
+    scheduler_->add(std::move(high_prio));
+
+    // 4. Unblock the gatekeeper
+    gatekeeper_end.set_value();
+
+    // 5. Stop ensures everything processes before we verify
+    scheduler_->stop();
+    scheduler_->join();
+
+    // Verify High Prio (90) ran before Low Prio (10)
+    ASSERT_EQ(execution_order.size(), 2);
+    EXPECT_EQ(execution_order[0], 90);
+    EXPECT_EQ(execution_order[1], 10);
+}
+
+TEST_F(SchedulerTest, FifoTieBreaking) {
+    // Verify that tasks with SAME priority run in FIFO order
+    scheduler_->start(1);
+
+    std::vector<int> execution_order;
+    std::mutex vector_mutex;
+    std::promise<void> gatekeeper_run, gatekeeper_release;
+
+    // Block the thread
+    scheduler_->add(std::make_unique<TestTask>(100, [&]() {
+        gatekeeper_run.set_value();
+        gatekeeper_release.get_future().wait();
+    }));
+    gatekeeper_run.get_future().wait();
+
+    // Add 3 tasks with SAME priority (1)
+    for(int i = 1; i <= 3; ++i) {
+        scheduler_->add(std::make_unique<TestTask>(1, [&, i]() {
+            std::lock_guard<std::mutex> lock(vector_mutex);
+            execution_order.push_back(i);
+        }));
+        // Small sleep to ensure timestamps are distinct
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
+    }
+
+    gatekeeper_release.set_value(); // Unleash the queue
+    scheduler_->stop();
+    scheduler_->join();
+
+    // Expect: 1, 2, 3
+    std::vector<int> expected = {1, 2, 3};
+    EXPECT_EQ(execution_order, expected);
+}
+
+TEST_F(SchedulerTest, TaskCancellation) {
+    scheduler_->start(1);
+    
+    std::promise<void> gatekeeper_ready, gatekeeper_finish;
+    
+    // 1. Block the thread so the next task sits in the queue
+    scheduler_->add(std::make_unique<TestTask>(10, [&]() {
+        gatekeeper_ready.set_value();
+        gatekeeper_finish.get_future().wait();
+    }));
+    gatekeeper_ready.get_future().wait();
+
+    // 2. Create and queue the victim task
+    auto task_ptr = std::make_unique<TestTask>(5); 
+    int task_id = task_ptr->getId(); // Capture ID before move
+    
+    // We pass a raw pointer purely for verification (unsafe in prod, okay for this test scope)
+    TestTask* raw_ptr = task_ptr.get(); 
+    
+    scheduler_->add(std::move(task_ptr));
+
+    // 3. Cancel it immediately
+    scheduler_->cancel(task_id);
+
+    // 4. Release the thread
+    gatekeeper_finish.set_value();
+    
+    scheduler_->stop();
+    scheduler_->join();
+
+    // 5. Verify the task was NOT executed
+    EXPECT_FALSE(raw_ptr->wasExecuted());
+}

@@ -62,20 +62,32 @@ status_t Scheduler::add(Task_p t) {
 
 void Scheduler::run() {
     std::unique_lock<std::mutex> lk(mtx);
-    Task_p t;
-    while(running) {
-        while (pq.empty() && running) {
-             cv.wait(lk);
-        }
-        if (!running) {
+    while (true) {
+        // Wait until:
+        // 1. The queue has items
+        // 2. OR the scheduler has stopped (so we can drain the remaining items)
+        cv.wait(lk, [this]{ return !pq.empty() || !running; });
+
+        // EXIT CONDITION:
+        // If stopped AND nothing left in queue, we are done.
+        if (!running && pq.empty()) {
             return;
         }
-        t = std::move(const_cast<Task_p&>(pq.top()));
+
+        // If queue is empty (spurious wake), go back to waiting
+        if (pq.empty()) continue;
+
+        // Get the task
+        // const_cast is needed because priority_queue::top() returns const&
+        Task_p t = std::move(const_cast<Task_p&>(pq.top()));
         pq.pop();
-        if(cancelled.count(t->getId())) {
+
+        // Check for cancellation
+        if (cancelled.count(t->getId())) {
             cancelled.erase(t->getId());
             continue;
         }
+
         lk.unlock();
         t->execute();
         lk.lock();
