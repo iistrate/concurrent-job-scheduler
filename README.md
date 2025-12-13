@@ -223,13 +223,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
-- [ ] Expand unit test suite to cover cancellation and priority edge cases.
+- [X] Expand unit test suite to cover cancellation and priority edge cases.
 - [ ] Investigate performance with a larger number of worker threads.
 - [ ] Add support for scheduled (delayed) task execution.
 
 ## Status
 
-✅ **Version 1.0.0** – Stable release with full test coverage and initial performance benchmarks.
+✅ **Version 1.1.0** – Enhanced release with CI/CD, increased test coverage (~88%), and graceful shutdown logic.
 
 ---
 

@@ -1,14 +1,8 @@
-# Changelog
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.html).
-
-## [Unreleased]
-
----
-## [1.1.0] - 2025-08-22
+## [1.1.0] - 2025-12-13
 ### Added
+- **CI/CD Pipeline**: Integrated GitHub Actions for automated building and testing on every push.
+- **Code Coverage**: Added Codecov integration to track test coverage (currently ~88%).
+- **Expanded Test Suite**: Added comprehensive tests for priority execution order, FIFO tie-breaking, and task cancellation.
 - **RAII compliant lifecycle**: The scheduler now automatically stops and joins threads in its destructor for guaranteed resource cleanup.
 
 ### Changed
@@ -18,14 +12,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.h
 ### Fixed
 - **Critical memory safety issue**: Migrated from raw pointers to `std::unique_ptr` in the priority queue to completely eliminate the risk of memory leaks.
 - **Race conditions on shutdown**: Replaced `bool` flags with `std::atomic<bool>` and implemented idempotent logic in `stop()` and `join()` to ensure thread safe and predictable shutdown.
-
----
-## [1.0.0] - 2025-08-21
-### Added
-- Thread-safe priority queue scheduler.
-- Task cancellation support.
-- Thread pool execution.
-- Unit tests and example usage.
-
-### Changed
-- README wording decaffeinated ☕.
