@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtest-dev libgmock-dev cmake
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+
+    - name: Build Project
+      run: |
+        cd build
+        make
+
+    - name: Build Tests
+      run: |
+        cd build
+        make scheduler_tests
+
+    - name: Run Test Suite
+      run: |
+        cd build
+        ./scheduler_tests
