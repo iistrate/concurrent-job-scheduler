@@ -3,6 +3,7 @@
 ![Language](https://img.shields.io/badge/language-C%2B%2B17-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
+[![codecov](https://codecov.io/github/iistrate/concurrent-job-scheduler/graph/badge.svg?token=C076P33IQG)](https://codecov.io/github/iistrate/concurrent-job-scheduler)
 
 A high performance, thread safe C++ job scheduler featuring priority based task execution with configurable thread pools.
 
