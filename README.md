@@ -9,12 +9,12 @@ A high performance, thread safe C++ job scheduler featuring priority based task 
 
 ## Features
 
-- **🚀 Priority-Based Scheduling**: Tasks execute by priority with timestamp based tie breaking for fairness
-- **🔧 Configurable Thread Pool**: Dynamically adjustable worker thread count
-- **🛡️ Thread-Safe Operations**: Full synchronization using mutexes and condition variables
-- **❌ Task Cancellation**: Cancel pending tasks before execution via unique task IDs
-- **⚡ Generic Task Interface**: Virtual base class supporting any custom task implementation
-- **📊 Performance Tested**: Comprehensive benchmarks demonstrating multi threading benefits
+- ** Priority-Based Scheduling**: Tasks execute by priority with timestamp based tie breaking for fairness
+- ** Configurable Thread Pool**: Dynamically adjustable worker thread count
+- ** Thread-Safe Operations**: Full synchronization using mutexes and condition variables
+- ** Task Cancellation**: Cancel pending tasks before execution via unique task IDs
+- ** Generic Task Interface**: Virtual base class supporting any custom task implementation
+- ** Performance Tested**: Comprehensive benchmarks demonstrating multi threading benefits
 
 ## Quick Start
 
